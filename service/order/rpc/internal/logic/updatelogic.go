@@ -48,7 +48,7 @@ func (l *UpdateLogic) Update(in *order.UpdateRequest) (*order.UpdateResponse, er
 		res.Status = in.Status
 	}
 
-	err = l.svcCtx.OrderModel.Update(*res)
+	err = l.svcCtx.OrderModel.Update(res)
 	if err != nil {
 		return nil, status.Error(500, err.Error())
 	}

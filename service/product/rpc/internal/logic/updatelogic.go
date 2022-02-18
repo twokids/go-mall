@@ -2,13 +2,13 @@ package logic
 
 import (
 	"context"
-	"google.golang.org/grpc/status"
-	"mall/service/product/model"
 
+	"mall/service/product/model"
 	"mall/service/product/rpc/internal/svc"
 	"mall/service/product/rpc/product"
 
 	"github.com/tal-tech/go-zero/core/logx"
+	"google.golang.org/grpc/status"
 )
 
 type UpdateLogic struct {
@@ -51,7 +51,7 @@ func (l *UpdateLogic) Update(in *product.UpdateRequest) (*product.UpdateResponse
 		res.Status = in.Status
 	}
 
-	err = l.svcCtx.ProductModel.Update(*res)
+	err = l.svcCtx.ProductModel.Update(res)
 	if err != nil {
 		return nil, status.Error(500, err.Error())
 	}

@@ -6,28 +6,30 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tal-tech/go-zero/core/stores/builder"
 	"github.com/tal-tech/go-zero/core/stores/cache"
 	"github.com/tal-tech/go-zero/core/stores/sqlc"
 	"github.com/tal-tech/go-zero/core/stores/sqlx"
 	"github.com/tal-tech/go-zero/core/stringx"
-	"github.com/tal-tech/go-zero/tools/goctl/model/sql/builderx"
 )
 
 var (
-	productFieldNames          = builderx.RawFieldNames(&Product{})
+	productFieldNames          = builder.RawFieldNames(&Product{})
 	productRows                = strings.Join(productFieldNames, ",")
 	productRowsExpectAutoSet   = strings.Join(stringx.Remove(productFieldNames, "`id`", "`create_time`", "`update_time`"), ",")
 	productRowsWithPlaceHolder = strings.Join(stringx.Remove(productFieldNames, "`id`", "`create_time`", "`update_time`"), "=?,") + "=?"
 
-	cacheProductIdPrefix = "cache#product#id#"
+	cacheProductIdPrefix = "cache:product:id:"
 )
 
 type (
 	ProductModel interface {
-		Insert(data Product) (sql.Result, error)
+		Insert(data *Product) (sql.Result, error)
 		FindOne(id int64) (*Product, error)
-		Update(data Product) error
+		Update(data *Product) error
 		Delete(id int64) error
+		// RawDB() (*sql.DB, error)
+		TxAdjustStock(tx *sql.Tx, id int64, delta int) (sql.Result, error)
 	}
 
 	defaultProductModel struct {
@@ -54,7 +56,7 @@ func NewProductModel(conn sqlx.SqlConn, c cache.CacheConf) ProductModel {
 	}
 }
 
-func (m *defaultProductModel) Insert(data Product) (sql.Result, error) {
+func (m *defaultProductModel) Insert(data *Product) (sql.Result, error) {
 	query := fmt.Sprintf("insert into %s (%s) values (?, ?, ?, ?, ?)", m.table, productRowsExpectAutoSet)
 	ret, err := m.ExecNoCache(query, data.Name, data.Desc, data.Stock, data.Amount, data.Status)
 
@@ -78,7 +80,7 @@ func (m *defaultProductModel) FindOne(id int64) (*Product, error) {
 	}
 }
 
-func (m *defaultProductModel) Update(data Product) error {
+func (m *defaultProductModel) Update(data *Product) error {
 	productIdKey := fmt.Sprintf("%s%v", cacheProductIdPrefix, data.Id)
 	_, err := m.Exec(func(conn sqlx.SqlConn) (result sql.Result, err error) {
 		query := fmt.Sprintf("update %s set %s where `id` = ?", m.table, productRowsWithPlaceHolder)
@@ -104,4 +106,16 @@ func (m *defaultProductModel) formatPrimary(primary interface{}) string {
 func (m *defaultProductModel) queryPrimary(conn sqlx.SqlConn, v, primary interface{}) error {
 	query := fmt.Sprintf("select %s from %s where `id` = ? limit 1", productRows, m.table)
 	return conn.QueryRow(v, query, primary)
+}
+
+// func (m *defaultProductModel) RawDB() (*sql.DB, error) {
+// 	return m.CachedConn.RawDB()
+// }
+
+func (m *defaultProductModel) TxAdjustStock(tx *sql.Tx, id int64, delta int) (sql.Result, error) {
+	productIdKey := fmt.Sprintf("%s%v", cacheProductIdPrefix, id)
+	return m.Exec(func(conn sqlx.SqlConn) (result sql.Result, err error) {
+		query := fmt.Sprintf("update %s set stock=stock+? where stock >= -? and id=?", m.table)
+		return tx.Exec(query, delta, delta, id)
+	}, productIdKey)
 }

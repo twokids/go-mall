@@ -12,7 +12,7 @@ import (
 	"github.com/tal-tech/go-zero/rest"
 )
 
-var configFile = flag.String("f", "etc/Pay.yaml", "the config file")
+var configFile = flag.String("f", "etc/pay.yaml", "the config file")
 
 func main() {
 	flag.Parse()

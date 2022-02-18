@@ -2,13 +2,13 @@ package logic
 
 import (
 	"context"
-	"google.golang.org/grpc/status"
-	"mall/service/product/model"
 
+	"mall/service/product/model"
 	"mall/service/product/rpc/internal/svc"
 	"mall/service/product/rpc/product"
 
 	"github.com/tal-tech/go-zero/core/logx"
+	"google.golang.org/grpc/status"
 )
 
 type RemoveLogic struct {

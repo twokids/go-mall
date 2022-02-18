@@ -1,9 +1,10 @@
 package svc
 
 import (
-	"github.com/tal-tech/go-zero/core/stores/sqlx"
 	"mall/service/product/model"
 	"mall/service/product/rpc/internal/config"
+
+	"github.com/tal-tech/go-zero/core/stores/sqlx"
 )
 
 type ServiceContext struct {

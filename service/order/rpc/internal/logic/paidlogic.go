@@ -37,7 +37,7 @@ func (l *PaidLogic) Paid(in *order.PaidRequest) (*order.PaidResponse, error) {
 
 	res.Status = 1
 
-	err = l.svcCtx.OrderModel.Update(*res)
+	err = l.svcCtx.OrderModel.Update(res)
 	if err != nil {
 		return nil, status.Error(500, err.Error())
 	}
